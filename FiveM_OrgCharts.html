@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>FiveM — Organigramas Editables</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+:root{
+  --bg:#08080c;--bg2:#0e0e14;--bg3:#14141e;--bg4:#1c1c28;--bg5:#242434;
+  --border:#1e1e2e;--border2:#2a2a3e;--border3:#383858;
+  --text:#d8d8f0;--text2:#7878a0;--text3:#3a3a58;
+  --gold:#f0c040;--gold2:#805808;--gold3:#201400;
+  --red:#e04040;--red2:#601818;--red3:#180808;
+  --blue:#4080f0;--blue2:#183060;--blue3:#080c20;
+  --green:#40c080;--green2:#106040;--green3:#041810;
+  --purple:#a060f0;--purple2:#401880;--purple3:#100820;
+  --amber:#f0a020;--amber2:#603808;--amber3:#180c02;
+  --teal:#20c0c0;--teal2:#085858;--teal3:#021818;
+  --coral:#f06040;--coral2:#601808;--coral3:#180602;
+  --gray:#606080;--gray2:#282840;--gray3:#101018;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;display:flex;flex-direction:column}
+
+/* TITLEBAR */
+.tbar{height:42px;background:var(--bg2);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+.tbar-dots{display:flex;gap:6px}
+.td{width:12px;height:12px;border-radius:50%}
+.tbar-title{font-size:14px;font-weight:700;letter-spacing:.5px;margin-left:6px}
+.tbar-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.tbar-right{margin-left:auto;display:flex;gap:8px}
+.chip{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:700;font-family:'JetBrains Mono',monospace}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border2);flex-shrink:0}
+.tab{padding:0 24px;height:44px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;transition:all .15s}
+.tab:hover{color:var(--text2);background:var(--bg3)}
+.tab.act{color:var(--text);border-bottom-color:var(--gold)}
+.tab-dot{width:8px;height:8px;border-radius:50%}
+
+/* LAYOUT */
+.app{flex:1;display:flex;overflow:hidden}
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sb-tools{padding:12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.sb-section{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:10px 12px 6px}
+.sb-scroll{flex:1;overflow-y:auto;padding-bottom:12px}
+.sb-scroll::-webkit-scrollbar{width:3px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--border3)}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.3px;transition:all .12s;display:flex;align-items:center;gap:6px;justify-content:center}
+.btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border3)}
+.btn-gold{background:var(--gold3);color:var(--gold);border-color:var(--gold2)}
+.btn-gold:hover{background:var(--gold2)}
+.btn-red{background:var(--red3);color:var(--red);border-color:var(--red2)}
+.btn-red:hover{background:var(--red2)}
+.btn-blue{background:var(--blue3);color:var(--blue);border-color:var(--blue2)}
+.btn-blue:hover{background:var(--blue2)}
+.btn-green{background:var(--green3);color:var(--green);border-color:var(--green2)}
+.btn-green:hover{background:var(--green2)}
+.btn-full{width:100%}
+.btn-sm{padding:4px 10px;font-size:10px}
+
+/* CANVAS AREA */
+.canvas-area{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+canvas{position:absolute;top:0;left:0;cursor:grab}
+canvas.dragging{cursor:grabbing}
+canvas.connecting{cursor:crosshair}
+
+/* MINI TOOLBAR */
+.mini-tb{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:6px 10px;z-index:10}
+
+/* TOOLTIP */
+.tooltip{position:absolute;background:var(--bg3);border:1px solid var(--border3);border-radius:8px;padding:10px 13px;font-size:11px;pointer-events:none;z-index:100;display:none;min-width:160px;max-width:220px}
+.tt-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.tt-alias{font-size:11px;color:var(--gold);margin-bottom:5px;font-family:'JetBrains Mono',monospace}
+.tt-row{font-size:11px;color:var(--text3);margin-bottom:1px}
+.tt-row span{color:var(--text2)}
+
+/* FORMS */
+.fg{margin-bottom:9px}
+.fl{font-size:11px;color:var(--text3);margin-bottom:3px;display:block;font-weight:600;letter-spacing:.3px}
+.fi{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;font-family:'Syne',sans-serif;outline:none;transition:border-color .12s}
+.fi:focus{border-color:var(--gold2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border3);border-radius:12px;padding:20px;width:380px;max-height:85vh;overflow-y:auto}
+.modal::-webkit-scrollbar{width:3px}
+.modal::-webkit-scrollbar-thumb{background:var(--border3)}
+.modal-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border2);letter-spacing:.5px}
+.modal-actions{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border2)}
+
+/* NODE DETAIL PANEL */
+.nd-panel{padding:0 12px 12px}
+.nd-name{font-size:13px;font-weight:800;margin-bottom:2px;letter-spacing:.3px}
+.nd-alias{font-size:11px;color:var(--gold);margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+.nd-field{font-size:11px;color:var(--text3);margin-bottom:3px;line-height:1.4}
+.nd-field span{color:var(--text2)}
+.nd-detail{font-size:11px;color:var(--text2);line-height:1.6;margin-top:6px;padding:8px;background:var(--bg3);border-radius:6px;border-left:2px solid var(--gold2)}
+.status-pill{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;font-weight:700;margin-top:6px;font-family:'JetBrains Mono',monospace}
+
+/* LEGEND */
+.leg-row{display:flex;align-items:center;gap:8px;padding:5px 12px;font-size:11px;color:var(--text2)}
+.leg-box{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* COLOR SWATCH */
+.color-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.cswatch{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:border-color .1s}
+.cswatch.sel{border-color:#fff}
+
+/* CONNECT MODE */
+.conn-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--amber2);border-radius:8px;padding:6px 14px;font-size:11px;color:var(--amber);font-family:'JetBrains Mono',monospace;pointer-events:none;z-index:10;display:none}
+
+/* CLASSIFICATION BADGE */
+.cl-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-right:4px}
+</style>
+</head>
+<body>
+
+<!-- TITLEBAR -->
+<div class="tbar">
+  <div class="tbar-dots">
+    <div class="td" style="background:#ff5f57"></div>
+    <div class="td" style="background:#febc2e"></div>
+    <div class="td" style="background:#28c840"></div>
+  </div>
+  <span class="tbar-title">FiveM ORG MANAGER</span>
+  <span class="tbar-sub">// Organigramas Editables v2.0</span>
+  <div class="tbar-right">
+    <span class="chip" style="background:var(--gold3);color:var(--gold);border:1px solid var(--gold2)">ACTIVO</span>
+    <span class="chip" style="background:var(--blue3);color:var(--blue);border:1px solid var(--blue2)">FIVEM RP</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab act" id="tab-own" onclick="switchTab('own')">
+    <div class="tab-dot" style="background:var(--gold)"></div>
+    MI ORGANIZACIÓN
+  </div>
+  <div class="tab" id="tab-bands" onclick="switchTab('bands')">
+    <div class="tab-dot" style="background:var(--red)"></div>
+    CLASIFICACIÓN DE BANDAS
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-tools" id="sb-tools-own">
+      <button class="btn btn-gold btn-full" onclick="openAdd()">+ Agregar nodo</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="btn btn-blue" onclick="setMode('connect')" id="btn-connect">↔ Conectar</button>
+        <button class="btn" onclick="setMode('delete')" id="btn-delete">✕ Eliminar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="btn" onclick="zoom(-0.15)">− Zoom</button>
+        <button class="btn" onclick="zoom(0.15)">+ Zoom</button>
+      </div>
+      <button class="btn btn-full" onclick="resetView()">↺ Centrar vista</button>
+      <button class="btn btn-full" onclick="exportPNG()">⬇ Exportar PNG</button>
+    </div>
+    <div class="sb-tools" id="sb-tools-bands" style="display:none">
+      <button class="btn btn-red btn-full" onclick="openAddBand()">+ Agregar banda</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="btn btn-blue" onclick="setMode('connect')" id="btn-connect-b">↔ Vincular</button>
+        <button class="btn" onclick="setMode('delete')" id="btn-delete-b">✕ Eliminar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="btn" onclick="zoom(-0.15)">− Zoom</button>
+        <button class="btn" onclick="zoom(0.15)">+ Zoom</button>
+      </div>
+      <button class="btn btn-full" onclick="resetView()">↺ Centrar vista</button>
+      <button class="btn btn-full" onclick="exportPNG()">⬇ Exportar PNG</button>
+    </div>
+
+    <!-- NODE DETAIL -->
+    <div class="sb-section">SELECCIONADO</div>
+    <div id="node-detail-panel" class="nd-panel">
+      <div style="font-size:11px;color:var(--text3);font-style:italic;padding:4px 0">Clic en un nodo para detalles</div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="sb-section" id="legend-title">RANGOS</div>
+    <div id="legend-content"></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-area" id="canvas-area">
+    <canvas id="main-canvas"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+    <div class="conn-hint" id="conn-hint">Modo conexión: clic en nodo origen, luego nodo destino</div>
+  </div>
+</div>
+
+<!-- MODAL: Agregar nodo propio -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <div class="modal-title">AGREGAR NODO — MI ORGANIZACIÓN</div>
+    <div class="frow">
+      <div class="fg"><label class="fl">NOMBRE</label><input class="fi" id="n-name" placeholder="Nombre real o apodo"/></div>
+      <div class="fg"><label class="fl">ALIAS / APODO</label><input class="fi" id="n-alias" placeholder='"El Tigre"'/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">RANGO</label>
+        <select class="fi" id="n-rank">
+          <option value="boss">Jefe / Boss</option>
+          <option value="sub">Underboss</option>
+          <option value="capo">Caporegime / Lugarteniente</option>
+          <option value="soldado">Soldado</option>
+          <option value="asso">Asociado</option>
+          <option value="fin">Finanzas</option>
+          <option value="log">Logística</option>
+          <option value="sic">Sicario / Seguridad</option>
+          <option value="prod">Producción</option>
+          <option value="cor">Corrupción / Política</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">ESTADO</label>
+        <select class="fi" id="n-status">
+          <option value="activo">Activo</option>
+          <option value="prófugo">Prófugo</option>
+          <option value="capturado">Capturado</option>
+          <option value="muerto">Fallecido</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">ÁREA / RESPONSABILIDAD</label><input class="fi" id="n-area" placeholder="Ej: Control zona norte, Lavado de dinero..."/></div>
+    <div class="fg"><label class="fl">NOTAS / DESCRIPCIÓN</label><textarea class="fi" id="n-detail" rows="2" placeholder="Información adicional..."></textarea></div>
+    <div class="fg"><label class="fl">COLOR DEL NODO</label>
+      <div class="color-row" id="color-picker"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('add')" style="flex:1">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmAdd()" style="flex:1">Agregar nodo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Editar nodo -->
+<div class="modal-bg" id="modal-edit">
+  <div class="modal">
+    <div class="modal-title" id="edit-title">EDITAR NODO</div>
+    <div class="frow">
+      <div class="fg"><label class="fl">NOMBRE</label><input class="fi" id="e-name"/></div>
+      <div class="fg"><label class="fl">ALIAS</label><input class="fi" id="e-alias"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">RANGO</label>
+        <select class="fi" id="e-rank">
+          <option value="boss">Jefe / Boss</option><option value="sub">Underboss</option>
+          <option value="capo">Caporegime</option><option value="soldado">Soldado</option>
+          <option value="asso">Asociado</option><option value="fin">Finanzas</option>
+          <option value="log">Logística</option><option value="sic">Sicario</option>
+          <option value="prod">Producción</option><option value="cor">Corrupción</option>
+          <option value="banda">Banda</option><option value="cartel">Cártel</option>
+          <option value="pandilla">Pandilla</option><option value="mafia">Mafia</option>
+          <option value="independiente">Independiente</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">ESTADO</label>
+        <select class="fi" id="e-status">
+          <option value="activo">Activo</option><option value="prófugo">Prófugo</option>
+          <option value="capturado">Capturado</option><option value="muerto">Fallecido</option>
+          <option value="inactivo">Inactivo</option><option value="aliado">Aliado</option>
+          <option value="neutro">Neutro</option><option value="enemigo">Enemigo</option>
+          <option value="tenso">Tenso</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">ÁREA / TIPO</label><input class="fi" id="e-area"/></div>
+    <div class="fg"><label class="fl">NOTAS</label><textarea class="fi" id="e-detail" rows="2"></textarea></div>
+    <div class="fg"><label class="fl">COLOR</label><div class="color-row" id="edit-color-picker"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-red" onclick="deleteSelected()" style="flex:1">Eliminar nodo</button>
+      <button class="btn" onclick="closeModal('edit')" style="flex:1">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmEdit()" style="flex:1">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Agregar banda -->
+<div class="modal-bg" id="modal-band">
+  <div class="modal">
+    <div class="modal-title">AGREGAR BANDA / ORGANIZACIÓN RIVAL</div>
+    <div class="frow">
+      <div class="fg"><label class="fl">NOMBRE</label><input class="fi" id="b-name" placeholder="Ej: Los Perros"/></div>
+      <div class="fg"><label class="fl">TIPO</label>
+        <select class="fi" id="b-type">
+          <option value="banda">Banda callejera</option><option value="cartel">Cártel</option>
+          <option value="pandilla">Pandilla</option><option value="mafia">Mafia</option>
+          <option value="independiente">Independiente</option><option value="policia">Policía corrupta</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">RELACIÓN</label>
+        <select class="fi" id="b-rel">
+          <option value="aliado">Aliado</option><option value="neutro">Neutro</option>
+          <option value="tenso">Tenso</option><option value="enemigo">Enemigo</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">LÍDER</label><input class="fi" id="b-leader" placeholder="Nombre del líder"/></div>
+    </div>
+    <div class="fg"><label class="fl">ZONA / TERRITORIO</label><input class="fi" id="b-zone" placeholder="Zona que controla..."/></div>
+    <div class="fg"><label class="fl">NOTAS</label><textarea class="fi" id="b-detail" rows="2" placeholder="Información de inteligencia..."></textarea></div>
+    <div class="fg"><label class="fl">COLOR</label><div class="color-row" id="band-color-picker"></div></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('band')" style="flex:1">Cancelar</button>
+      <button class="btn btn-red" onclick="confirmAddBand()" style="flex:1">Agregar banda</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PALETTE & CONSTANTS
+// ============================================================
+const COLORS = ["#f0c040","#e04040","#4080f0","#40c080","#a060f0","#f06040","#20c0c0","#f0a020","#e060a0","#60a0e0","#80e040","#c040c0"];
+const STATUS_COLOR = {activo:"#40c080",capturado:"#e04040",prófugo:"#f0a020",muerto:"#404050",inactivo:"#505060",aliado:"#40c080",enemigo:"#e04040",neutro:"#8080a0",tenso:"#f0a020"};
+const STATUS_LABEL = {activo:"Activo",capturado:"Capturado",prófugo:"Prófugo",muerto:"Fallecido",inactivo:"Inactivo",aliado:"Aliado",enemigo:"Enemigo",neutro:"Neutro",tenso:"Tenso"};
+const RANK_COLORS = {boss:"#f0c040",sub:"#e04040",capo:"#a060f0",soldado:"#4080f0",asso:"#40c080",fin:"#20c0c0",log:"#20c0c0",sic:"#f06040",prod:"#80e040",cor:"#a060f0",banda:"#e04040",cartel:"#f0c040",pandilla:"#f06040",mafia:"#a060f0",independiente:"#8080a0",policia:"#4080f0"};
+const RANK_LABELS = {boss:"Jefe / Boss",sub:"Underboss",capo:"Caporegime",soldado:"Soldado",asso:"Asociado",fin:"Finanzas",log:"Logística",sic:"Sicario",prod:"Producción",cor:"Corrupción",banda:"Banda callejera",cartel:"Cártel",pandilla:"Pandilla",mafia:"Mafia",independiente:"Independiente",policia:"Policía"};
+
+const NODE_W = 160, NODE_H = 68;
+let uid = 100;
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  own: {
+    nodes: [
+      {id:1,name:"El_Padrino",alias:'"El Jefe"',rank:"boss",status:"activo",area:"Dirección general",detail:"Líder supremo de la organización. Control total.",color:"#f0c040",x:0,y:0},
+      {id:2,name:"La_Sombra",alias:'"La Sombra"',rank:"sub",status:"activo",area:"Operaciones",detail:"Segundo al mando. Coordina todas las operaciones activas.",color:"#e04040",x:-220,y:130},
+      {id:3,name:"El_Contador",alias:'"El Licenciado"',rank:"fin",status:"activo",area:"Finanzas / Lavado",detail:"Responsable de movimiento de fondos y empresas fachada.",color:"#20c0c0",x:220,y:130},
+      {id:4,name:"Marco_V",alias:'"El Capo Norte"',rank:"capo",status:"activo",area:"Plaza Norte",detail:"Controla la zona norte y distribución en esa área.",color:"#a060f0",x:-400,y:270},
+      {id:5,name:"Nico_R",alias:'"El Capo Sur"',rank:"capo",status:"activo",area:"Plaza Sur",detail:"Controla la zona sur del territorio.",color:"#a060f0",x:-140,y:270},
+      {id:6,name:"El_Vikingo",alias:'"El Soldado"',rank:"soldado",status:"activo",area:"Fuerza operativa",detail:"Soldado de confianza. Responsable de operaciones de campo.",color:"#4080f0",x:100,y:270},
+      {id:7,name:"El_Nini",alias:'"Jefe Sicarios"',rank:"sic",status:"capturado",area:"Seguridad / Escolta",detail:"Jefe del grupo de seguridad. Actualmente capturado.",color:"#f06040",x:360,y:270},
+    ],
+    edges:[{from:1,to:2},{from:1,to:3},{from:2,to:4},{from:2,to:5},{from:3,to:6},{from:1,to:7}],
+  },
+  bands: {
+    nodes: [
+      {id:10,name:"Los Perros",alias:"Banda rival",rank:"banda",status:"enemigo",area:"Zona Este",detail:"Principal banda rival. Control del mercado local.",color:"#e04040",x:-320,y:-100},
+      {id:11,name:"Cartel del Sur",alias:"Organización grande",rank:"cartel",status:"neutro",area:"Rutas sur",detail:"Cártel con presencia regional. Relación neutral.",color:"#f0c040",x:0,y:-150},
+      {id:12,name:"Pandilla 18",alias:"Aliados urbanos",rank:"pandilla",status:"aliado",area:"Zona centro",detail:"Pandilla aliada. Útil para control de calles.",color:"#40c080",x:320,y:-100},
+      {id:13,name:"La Familia",alias:"Mafia histórica",rank:"mafia",status:"tenso",area:"Zona Oeste",detail:"Familia mafiosa. Relación tensa por territorio.",color:"#a060f0",x:-180,y:80},
+      {id:14,name:"Los Independientes",alias:"Freelancers",rank:"independiente",status:"neutro",area:"Sin zona fija",detail:"Operadores independientes. A veces se contratan.",color:"#8080a0",x:180,y:80},
+    ],
+    edges:[{from:10,to:11},{from:12,to:11},{from:13,to:11},{from:10,to:13}],
+  }
+};
+
+let currentTab = "own";
+let scale = 1, offX = 0, offY = 0;
+let isDragging = false, dragStart = null;
+let dragNode = null, dragNodeStart = null;
+let hoveredNode = null, selectedNode = null;
+let mode = "select"; // select | connect | delete
+let connectFrom = null;
+let editingNode = null;
+let addColor = COLORS[0], bandColor = COLORS[0], editColor = COLORS[0];
+let addPickerEl = null, bandPickerEl = null, editPickerEl = null;
+
+// ============================================================
+// CANVAS SETUP
+// ============================================================
+const canvas = document.getElementById("main-canvas");
+const ctx = canvas.getContext("2d");
+const area = document.getElementById("canvas-area");
+
+function resize(){
+  canvas.width = area.clientWidth;
+  canvas.height = area.clientHeight;
+  draw();
+}
+window.addEventListener("resize", resize);
+
+// ============================================================
+// COORDINATES
+// ============================================================
+function toS(wx,wy){return{x:wx*scale+offX+canvas.width/2, y:wy*scale+offY+canvas.height/2};}
+function toW(sx,sy){return{x:(sx-offX-canvas.width/2)/scale, y:(sy-offY-canvas.height/2)/scale};}
+
+// ============================================================
+// DRAW
+// ============================================================
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`${r},${g},${b}`;}
+
+function drawRoundRect(cx,cy,w,h,r,fillColor,strokeColor,strokeW=1){
+  const x=cx-w/2,y=cy-h/2;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+  if(fillColor){ctx.fillStyle=fillColor;ctx.fill();}
+  if(strokeColor){ctx.strokeStyle=strokeColor;ctx.lineWidth=strokeW;ctx.stroke();}
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Background grid
+  ctx.fillStyle="#0e0e14";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const gs=40*scale, ox=((offX%gs)+gs)%gs, oy=((offY%gs)+gs)%gs;
+  ctx.strokeStyle="#14141e";ctx.lineWidth=.5;
+  for(let x=ox;x<canvas.width;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for(let y=oy;y<canvas.height;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+
+  const data = state[currentTab];
+
+  // EDGES
+  data.edges.forEach(e=>{
+    const n1=data.nodes.find(n=>n.id===e.from), n2=data.nodes.find(n=>n.id===e.to);
+    if(!n1||!n2)return;
+    const s1=toS(n1.x,n1.y), s2=toS(n2.x,n2.y);
+    const isHov = hoveredNode&&(hoveredNode.id===e.from||hoveredNode.id===e.to);
+    const isSel = selectedNode&&(selectedNode.id===e.from||selectedNode.id===e.to);
+    // Curve
+    const cy=(s1.y+s2.y)/2;
+    ctx.beginPath();
+    ctx.moveTo(s1.x,s1.y+NODE_H/2*scale);
+    ctx.bezierCurveTo(s1.x,cy,s2.x,cy,s2.x,s2.y-NODE_H/2*scale);
+    ctx.strokeStyle=isSel?n1.color+"cc":isHov?n1.color+"88":n1.color+"33";
+    ctx.lineWidth=isSel?2:isHov?1.5:1;
+    ctx.stroke();
+    // Arrow
+    const ex=s2.x,ey=s2.y-NODE_H/2*scale-2;
+    const dx=ex-s1.x,dy=ey-s1.y;
+    const len=Math.sqrt(dx*dx+dy*dy);if(len<1)return;
+    const ux=dx/len,uy=dy/len;
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-6*scale*ux+4*scale*uy,ey-6*scale*uy-4*scale*ux);
+    ctx.lineTo(ex-6*scale*ux-4*scale*uy,ey-6*scale*uy+4*scale*ux);
+    ctx.closePath();
+    ctx.fillStyle=isSel?n1.color+"cc":n1.color+"55";
+    ctx.fill();
+  });
+
+  // Connect preview line
+  if(mode==="connect"&&connectFrom){
+    const n=data.nodes.find(x=>x.id===connectFrom);
+    if(n&&lastMouse){
+      const s=toS(n.x,n.y);
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(lastMouse.x,lastMouse.y);
+      ctx.strokeStyle="#f0a02088";ctx.lineWidth=1.5;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+    }
+  }
+
+  // NODES
+  data.nodes.forEach(n=>{
+    const s=toS(n.x,n.y);
+    const w=NODE_W*scale, h=NODE_H*scale;
+    const isHov=hoveredNode&&hoveredNode.id===n.id;
+    const isSel=selectedNode&&selectedNode.id===n.id;
+
+    // Glow for selected
+    if(isSel){ctx.shadowColor=n.color;ctx.shadowBlur=16;}
+
+    // Body
+    const bodyColor=isHov?"#1e1e2e":"#0e0e18";
+    const strokeColor=isSel?n.color:isHov?n.color+"88":n.color+"44";
+    drawRoundRect(s.x,s.y,w,h,8,bodyColor,strokeColor,isSel?2:1);
+    ctx.shadowBlur=0;
+
+    // Left color bar
+    const bx=s.x-w/2, by=s.y-h/2;
+    ctx.fillStyle=n.color;
+    ctx.beginPath();ctx.moveTo(bx,by+8);ctx.lineTo(bx,by+h-8);
+    ctx.arcTo(bx,by+h,bx+8,by+h,8);ctx.lineTo(bx+8,by+h);
+    ctx.lineTo(bx+8,by);ctx.lineTo(bx,by+8);ctx.closePath();ctx.fill();
+
+    // Status dot
+    ctx.beginPath();ctx.arc(s.x+w/2-9*scale,s.y-h/2+9*scale,4*scale,0,Math.PI*2);
+    ctx.fillStyle=STATUS_COLOR[n.status]||"#505060";ctx.fill();
+
+    // Delete X indicator
+    if(mode==="delete"&&isHov){
+      ctx.fillStyle="#e04040cc";
+      drawRoundRect(s.x,s.y,w,h,8,"#e0404022","#e0404088",1.5);
+      ctx.font=`bold ${20*scale}px Syne,sans-serif`;
+      ctx.textAlign="center";ctx.fillStyle="#e04040";
+      ctx.fillText("✕",s.x,s.y+7*scale);
+      ctx.shadowBlur=0;return;
+    }
+
+    // Connect highlight
+    if(mode==="connect"&&connectFrom===n.id){
+      drawRoundRect(s.x,s.y,w,h,8,null,"#f0a020",2);
+    }
+
+    const tx=s.x+6*scale, maxW=w-20*scale;
+    // Name
+    ctx.font=`bold ${Math.max(8,11*scale)}px Syne,sans-serif`;
+    ctx.textAlign="center";ctx.fillStyle=isSel?"#ffffff":"#d8d8f0";
+    let dn=n.name;
+    while(ctx.measureText(dn).width>maxW&&dn.length>3)dn=dn.slice(0,-1);
+    if(dn!==n.name)dn+="…";
+    ctx.fillText(dn,tx,s.y-8*scale);
+    // Alias
+    ctx.font=`${Math.max(7,9*scale)}px 'JetBrains Mono',monospace`;
+    ctx.fillStyle=n.color;
+    let da=n.alias;
+    while(ctx.measureText(da).width>maxW&&da.length>2)da=da.slice(0,-1);
+    if(da!==n.alias)da+="…";
+    ctx.fillText(da,tx,s.y+6*scale);
+    // Rank
+    ctx.font=`${Math.max(6,8*scale)}px Syne,sans-serif`;
+    ctx.fillStyle="#3a3a58";
+    let dr=RANK_LABELS[n.rank]||n.rank;
+    while(ctx.measureText(dr).width>maxW&&dr.length>3)dr=dr.slice(0,-1);
+    if(dr!==RANK_LABELS[n.rank]&&dr.length<(RANK_LABELS[n.rank]||"").length)dr+="…";
+    ctx.fillText(dr,tx,s.y+20*scale);
+  });
+
+  document.getElementById("zoom-lbl")&&(document.getElementById("zoom-lbl").textContent=Math.round(scale*100)+"%");
+}
+
+// ============================================================
+// INTERACTIONS
+// ============================================================
+let lastMouse=null;
+
+function getNodeAt(sx,sy){
+  const w=toW(sx,sy);
+  return state[currentTab].nodes.slice().reverse().find(n=>
+    Math.abs(w.x-n.x)<NODE_W/2&&Math.abs(w.y-n.y)<NODE_H/2
+  )||null;
+}
+
+canvas.addEventListener("mousedown",e=>{
+  const n=getNodeAt(e.offsetX,e.offsetY);
+  if(mode==="delete"&&n){deleteNode(n.id);return;}
+  if(mode==="connect"){
+    if(n){
+      if(!connectFrom){connectFrom=n.id;}
+      else if(connectFrom!==n.id){
+        addEdge(connectFrom,n.id);
+        connectFrom=null;
+        setMode("connect");
+      }
+    }else{connectFrom=null;}
+    draw();return;
+  }
+  if(n){
+    selectedNode=n;
+    dragNode=n;
+    dragNodeStart={x:e.offsetX,y:e.offsetY,nx:n.x,ny:n.y};
+    showDetail(n);
+  }else{
+    selectedNode=null;showDetail(null);
+    isDragging=true;
+    dragStart={x:e.offsetX-offX,y:e.offsetY-offY};
+  }
+  draw();
+});
+
+canvas.addEventListener("mousemove",e=>{
+  lastMouse={x:e.offsetX,y:e.offsetY};
+  if(dragNode&&dragNodeStart){
+    const dx=(e.offsetX-dragNodeStart.x)/scale;
+    const dy=(e.offsetY-dragNodeStart.y)/scale;
+    dragNode.x=dragNodeStart.nx+dx;
+    dragNode.y=dragNodeStart.ny+dy;
+    draw();return;
+  }
+  if(isDragging){offX=e.offsetX-dragStart.x;offY=e.offsetY-dragStart.y;draw();return;}
+  const n=getNodeAt(e.offsetX,e.offsetY);
+  hoveredNode=n;
+  showTooltip(n,e.offsetX,e.offsetY);
+  if(mode==="delete") canvas.style.cursor=n?"pointer":"default";
+  else if(mode==="connect") canvas.style.cursor="crosshair";
+  else canvas.style.cursor=n?"pointer":"grab";
+  if(mode==="connect") draw();
+});
+
+canvas.addEventListener("mouseup",e=>{
+  if(dragNode&&dragNodeStart){
+    const dx=Math.abs(e.offsetX-dragNodeStart.x)+Math.abs(e.offsetY-dragNodeStart.y);
+    if(dx<5&&mode==="select"){openEdit(dragNode);}
+  }
+  dragNode=null;dragNodeStart=null;
+  isDragging=false;
+});
+
+canvas.addEventListener("wheel",e=>{
+  e.preventDefault();
+  const f=e.deltaY<0?1.12:0.88;
+  const mx=e.offsetX-canvas.width/2,my=e.offsetY-canvas.height/2;
+  offX=(offX-mx)*f+mx;offY=(offY-my)*f+my;
+  scale=Math.min(4,Math.max(0.25,scale*f));
+  draw();
+},{passive:false});
+
+canvas.addEventListener("dblclick",e=>{
+  const n=getNodeAt(e.offsetX,e.offsetY);
+  if(n) openEdit(n);
+});
+
+// ============================================================
+// TOOLTIP & DETAIL
+// ============================================================
+const tt=document.getElementById("tooltip");
+function showTooltip(n,sx,sy){
+  if(!n){tt.style.display="none";return;}
+  tt.style.display="block";
+  tt.innerHTML=`<div class="tt-name">${n.name}</div>
+    <div class="tt-alias">${n.alias}</div>
+    <div class="tt-row">Rango: <span>${RANK_LABELS[n.rank]||n.rank}</span></div>
+    <div class="tt-row">Área: <span>${n.area}</span></div>
+    <div class="tt-row">Estado: <span style="color:${STATUS_COLOR[n.status]||"#888"}">${STATUS_LABEL[n.status]||n.status}</span></div>
+    <div style="font-size:10px;color:#3a3a58;margin-top:5px">Doble clic para editar</div>`;
+  let tx=sx+14,ty=sy-20;
+  if(tx+230>canvas.width)tx=sx-234;
+  if(ty<0)ty=sy+12;
+  tt.style.left=tx+"px";tt.style.top=ty+"px";
+}
+
+function showDetail(n){
+  const panel=document.getElementById("node-detail-panel");
+  if(!n){panel.innerHTML='<div style="font-size:11px;color:var(--text3);font-style:italic;padding:4px 0">Clic en un nodo para detalles</div>';return;}
+  panel.innerHTML=`
+    <div class="nd-name" style="color:${n.color}">${n.name}</div>
+    <div class="nd-alias">${n.alias}</div>
+    <div class="nd-field">Rango: <span>${RANK_LABELS[n.rank]||n.rank}</span></div>
+    <div class="nd-field">Área: <span>${n.area}</span></div>
+    <div class="nd-field">Estado: <span style="color:${STATUS_COLOR[n.status]||"#888"}">${STATUS_LABEL[n.status]||n.status}</span></div>
+    ${n.detail?`<div class="nd-detail">${n.detail}</div>`:""}
+    <div style="margin-top:8px;display:flex;gap:6px">
+      <button class="btn btn-sm btn-gold" onclick="openEdit(state[currentTab].nodes.find(x=>x.id==${n.id}))">Editar</button>
+      <button class="btn btn-sm btn-red" onclick="deleteNode(${n.id})">Eliminar</button>
+    </div>`;
+}
+
+// ============================================================
+// LEGEND
+// ============================================================
+function renderLegend(){
+  const legData = currentTab==="own"
+    ? [["boss","Jefe / Boss"],["sub","Underboss"],["capo","Caporegime"],["soldado","Soldado"],["asso","Asociado"],["fin","Finanzas"],["log","Logística"],["sic","Sicario"],["prod","Producción"],["cor","Corrupción"]]
+    : [["cartel","Cártel"],["banda","Banda callejera"],["pandilla","Pandilla"],["mafia","Mafia"],["independiente","Independiente"],["policia","Policía"]];
+  document.getElementById("legend-title").textContent = currentTab==="own"?"RANGOS":"TIPOS";
+  document.getElementById("legend-content").innerHTML = legData.map(([k,l])=>`
+    <div class="leg-row"><div class="leg-box" style="background:${RANK_COLORS[k]||"#888"}"></div>${l}</div>`).join("")
+    +`<div class="sb-section" style="margin-top:4px">ESTADOS</div>`
+    +Object.entries(STATUS_LABEL).map(([k,l])=>`<div class="leg-row"><div class="leg-box" style="border-radius:50%;background:${STATUS_COLOR[k]||"#888"}"></div>${l}</div>`).join("");
+}
+
+// ============================================================
+// COLOR PICKERS
+// ============================================================
+function buildPicker(containerId, getCurrent, setFn){
+  const el=document.getElementById(containerId);
+  el.innerHTML=COLORS.map((c,i)=>`<div class="cswatch${getCurrent()===c?" sel":""}" style="background:${c}" onclick="(function(){${setFn}='${c}';buildPicker('${containerId}',()=>${setFn},'${setFn}');})()"></div>`).join("");
+}
+
+function rebuildPickers(){
+  document.getElementById("color-picker").innerHTML=COLORS.map(c=>`<div class="cswatch${addColor===c?" sel":""}" style="background:${c}" onclick="addColor='${c}';rebuildPickers()"></div>`).join("");
+  document.getElementById("band-color-picker").innerHTML=COLORS.map(c=>`<div class="cswatch${bandColor===c?" sel":""}" style="background:${c}" onclick="bandColor='${c}';rebuildPickers()"></div>`).join("");
+  document.getElementById("edit-color-picker").innerHTML=COLORS.map(c=>`<div class="cswatch${editColor===c?" sel":""}" style="background:${c}" onclick="editColor='${c}';rebuildPickers()"></div>`).join("");
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(t){
+  currentTab=t;
+  selectedNode=null;hoveredNode=null;connectFrom=null;
+  setMode("select");
+  document.getElementById("tab-own").classList.toggle("act",t==="own");
+  document.getElementById("tab-bands").classList.toggle("act",t==="bands");
+  document.getElementById("sb-tools-own").style.display=t==="own"?"flex":"none";
+  document.getElementById("sb-tools-bands").style.display=t==="bands"?"flex":"none";
+  showDetail(null);
+  renderLegend();
+  resetView();
+}
+
+// ============================================================
+// MODE
+// ============================================================
+function setMode(m){
+  mode=m;
+  if(m!=="connect") connectFrom=null;
+  canvas.style.cursor=m==="connect"?"crosshair":m==="delete"?"pointer":"grab";
+  document.getElementById("conn-hint").style.display=m==="connect"?"block":"none";
+  ["btn-connect","btn-delete","btn-connect-b","btn-delete-b"].forEach(id=>{
+    const el=document.getElementById(id);if(el){el.style.background="";el.style.color="";}
+  });
+  if(m==="connect"){
+    ["btn-connect","btn-connect-b"].forEach(id=>{const el=document.getElementById(id);if(el){el.style.background="var(--amber3)";el.style.color="var(--amber)";}});
+  }
+  if(m==="delete"){
+    ["btn-delete","btn-delete-b"].forEach(id=>{const el=document.getElementById(id);if(el){el.style.background="var(--red3)";el.style.color="var(--red)";}});
+  }
+}
+
+// ============================================================
+// NODES CRUD
+// ============================================================
+function openAdd(){rebuildPickers();openModal("add");}
+function openAddBand(){rebuildPickers();openModal("band");}
+
+function confirmAdd(){
+  const name=document.getElementById("n-name").value.trim();if(!name)return;
+  const n={
+    id:++uid,name,alias:document.getElementById("n-alias").value||`"${name}"`,
+    rank:document.getElementById("n-rank").value,status:document.getElementById("n-status").value,
+    area:document.getElementById("n-area").value||"Sin área",
+    detail:document.getElementById("n-detail").value,color:addColor,
+    x:(Math.random()-0.5)*400,y:(Math.random()-0.5)*200
+  };
+  state.own.nodes.push(n);draw();closeModal("add");
+  document.getElementById("n-name").value="";document.getElementById("n-alias").value="";
+  document.getElementById("n-area").value="";document.getElementById("n-detail").value="";
+}
+
+function confirmAddBand(){
+  const name=document.getElementById("b-name").value.trim();if(!name)return;
+  const rel=document.getElementById("b-rel").value;
+  const n={
+    id:++uid,name,alias:`${document.getElementById("b-type").value} · Líder: ${document.getElementById("b-leader").value||"?"}`,
+    rank:document.getElementById("b-type").value,status:rel,
+    area:document.getElementById("b-zone").value||"Sin zona",
+    detail:document.getElementById("b-detail").value,color:bandColor,
+    x:(Math.random()-0.5)*500,y:(Math.random()-0.5)*300
+  };
+  state.bands.nodes.push(n);draw();closeModal("band");
+  document.getElementById("b-name").value="";document.getElementById("b-leader").value="";
+  document.getElementById("b-zone").value="";document.getElementById("b-detail").value="";
+}
+
+function openEdit(n){
+  if(!n)return;
+  editingNode=n;editColor=n.color;
+  document.getElementById("edit-title").textContent=`EDITAR — ${n.name}`;
+  document.getElementById("e-name").value=n.name;
+  document.getElementById("e-alias").value=n.alias;
+  document.getElementById("e-rank").value=n.rank;
+  document.getElementById("e-status").value=n.status;
+  document.getElementById("e-area").value=n.area;
+  document.getElementById("e-detail").value=n.detail;
+  rebuildPickers();
+  openModal("edit");
+}
+
+function confirmEdit(){
+  if(!editingNode)return;
+  editingNode.name=document.getElementById("e-name").value||editingNode.name;
+  editingNode.alias=document.getElementById("e-alias").value||editingNode.alias;
+  editingNode.rank=document.getElementById("e-rank").value;
+  editingNode.status=document.getElementById("e-status").value;
+  editingNode.area=document.getElementById("e-area").value;
+  editingNode.detail=document.getElementById("e-detail").value;
+  editingNode.color=editColor;
+  selectedNode=editingNode;showDetail(editingNode);
+  draw();closeModal("edit");
+}
+
+function deleteNode(id){
+  const data=state[currentTab];
+  data.nodes=data.nodes.filter(n=>n.id!==id);
+  data.edges=data.edges.filter(e=>e.from!==id&&e.to!==id);
+  if(selectedNode&&selectedNode.id===id){selectedNode=null;showDetail(null);}
+  if(dragNode&&dragNode.id===id){dragNode=null;}
+  draw();
+}
+
+function deleteSelected(){
+  if(editingNode){deleteNode(editingNode.id);closeModal("edit");editingNode=null;}
+}
+
+// ============================================================
+// EDGES
+// ============================================================
+function addEdge(from,to){
+  const data=state[currentTab];
+  if(!data.edges.find(e=>(e.from===from&&e.to===to)||(e.from===to&&e.to===from))){
+    data.edges.push({from,to});
+  }
+  draw();
+}
+
+// ============================================================
+// VIEW
+// ============================================================
+function zoom(d){scale=Math.min(4,Math.max(0.2,scale+d));draw();}
+function resetView(){scale=1;offX=0;offY=0;draw();}
+
+function exportPNG(){
+  const link=document.createElement("a");
+  link.download=`Organigrama_${currentTab==="own"?"MiOrg":"Bandas"}_${Date.now()}.png`;
+  link.href=canvas.toDataURL("image/png");link.click();
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal(id){document.getElementById("modal-"+id).classList.add("open");}
+function closeModal(id){document.getElementById("modal-"+id).classList.remove("open");}
+document.querySelectorAll(".modal-bg").forEach(bg=>bg.addEventListener("click",e=>{if(e.target===bg)bg.classList.remove("open");}));
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats(){
+  const all=[...state.own.nodes,...state.bands.nodes];
+  // Could add global stats here if needed
+}
+
+// ============================================================
+// INIT
+// ============================================================
+rebuildPickers();
+renderLegend();
+resize();
+</script>
+</body>
+</html>
